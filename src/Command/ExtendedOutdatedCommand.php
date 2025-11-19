@@ -462,10 +462,15 @@ class ExtendedOutdatedCommand extends BaseCommand
         $type = $this->getType($baseUrl);
         $diffPattern = self::URL_MAP[$type][self::URL_DIFF] ?? '';
 
-        [$actualVersion, $actualCommitHash] = explode(' ', $package->getFullPrettyVersion(true, PackageInterface::DISPLAY_SOURCE_REF), 2);
-        [$latestVersion, $latestCommitHash] = explode(' ', $latestPackage->getFullPrettyVersion(true, PackageInterface::DISPLAY_SOURCE_REF), 2);
+        $actualParts = explode(' ', $package->getFullPrettyVersion(true, PackageInterface::DISPLAY_SOURCE_REF), 2);
+        $actualVersion = $actualParts[0];
+        $actualCommitHash = $actualParts[1] ?? '';
 
-        if ($actualVersion === $latestVersion) {
+        $latestParts = explode(' ', $latestPackage->getFullPrettyVersion(true, PackageInterface::DISPLAY_SOURCE_REF), 2);
+        $latestVersion = $latestParts[0];
+        $latestCommitHash = $latestParts[1] ?? '';
+
+        if ($actualVersion === $latestVersion && $actualCommitHash && $latestCommitHash) {
             $actualVersion = $actualCommitHash;
             $latestVersion = $latestCommitHash;
         }

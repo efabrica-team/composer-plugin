@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased][unreleased]
+### Fixed
+- createDiffUrl properly handle package version without reference properly now
 
 ## [1.0.2]
 ### Fixed
