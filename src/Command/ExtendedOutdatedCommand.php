@@ -9,7 +9,6 @@ use Composer\Json\JsonFile;
 use Composer\Package\BasePackage;
 use Composer\Package\CompletePackageInterface;
 use Composer\Package\AliasPackage;
-use Composer\Package\Locker;
 use Composer\Package\PackageInterface;
 use Composer\Package\Version\VersionSelector;
 use Composer\Pcre\Preg;
@@ -122,7 +121,7 @@ class ExtendedOutdatedCommand extends BaseCommand
 
         if ($input->getOption('locked')) {
             $locker = $composer->getLocker();
-            if (!$locker instanceof Locker || !$locker->isLocked()) {
+            if (!$locker->isLocked()) {
                 throw new UnexpectedValueException('A valid composer.json and composer.lock files is required to run this command with --locked');
             }
             $lockedRepo = $locker->getLockedRepository(!$input->getOption('no-dev'));
@@ -512,7 +511,7 @@ class ExtendedOutdatedCommand extends BaseCommand
 
         return str_replace(
             ['%baseUrl%', '%latestVersion%', '%changelogFile%'],
-            [$baseUrl, preg_replace('/^dev-/', '', $latestPackage->getPrettyVersion()), $changelog],
+            [$baseUrl, preg_replace('/^dev-/', '', $latestPackage->getPrettyVersion()) ?? $latestPackage->getPrettyVersion(), $changelog],
             $changelogPattern
         );
     }
@@ -541,9 +540,12 @@ class ExtendedOutdatedCommand extends BaseCommand
         return str_replace([':', 'git@', '.git', '///'], ['/', 'https://', '', '://'], $sourceUrl);
     }
 
-    private function getType(string $baseUrl): ?string
+    private function getType(string $baseUrl): string
     {
         $host = parse_url($baseUrl, PHP_URL_HOST);
-        return $this->hostToTypeMap[$host] ?? null;
+        if (!is_string($host)) {
+            return '';
+        }
+        return $this->hostToTypeMap[$host] ?? '';
     }
 }
