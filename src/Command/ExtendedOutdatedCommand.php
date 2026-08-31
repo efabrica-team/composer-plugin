@@ -9,6 +9,7 @@ use Composer\Json\JsonFile;
 use Composer\Package\BasePackage;
 use Composer\Package\CompletePackageInterface;
 use Composer\Package\AliasPackage;
+use Composer\Package\Locker;
 use Composer\Package\PackageInterface;
 use Composer\Package\Version\VersionSelector;
 use Composer\Pcre\Preg;
@@ -90,7 +91,7 @@ class ExtendedOutdatedCommand extends BaseCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         /** @var Composer $composer */
-        $composer = $this->getComposer();
+        $composer = $this->requireComposer();
         /** @var string $vendorDir */
         $vendorDir = $composer->getConfig()->get('vendor-dir');
 
@@ -105,7 +106,7 @@ class ExtendedOutdatedCommand extends BaseCommand
 
         /** @var string $format */
         $format = $input->getOption('format');
-        if (!in_array($format, ['text', 'json'])) {
+        if (!in_array($format, ['text', 'json'], true)) {
             $io->writeError(sprintf('Unsupported format "%s". See help for supported formats.', $format));
             return 1;
         }
@@ -121,7 +122,7 @@ class ExtendedOutdatedCommand extends BaseCommand
 
         if ($input->getOption('locked')) {
             $locker = $composer->getLocker();
-            if (!$locker || !$locker->isLocked()) {
+            if (!$locker instanceof Locker || !$locker->isLocked()) {
                 throw new UnexpectedValueException('A valid composer.json and composer.lock files is required to run this command with --locked');
             }
             $lockedRepo = $locker->getLockedRepository(!$input->getOption('no-dev'));
@@ -301,7 +302,7 @@ class ExtendedOutdatedCommand extends BaseCommand
             }
 
             $table = new Table($output);
-            $table->setheaders(['Package', 'Actual version', 'Latest version', 'Notes']);
+            $table->setHeaders(['Package', 'Actual version', 'Latest version', 'Notes']);
 
             $i = 0;
             foreach ($outdatedPackages as $package) {
