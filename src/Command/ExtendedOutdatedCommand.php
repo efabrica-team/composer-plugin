@@ -90,7 +90,7 @@ class ExtendedOutdatedCommand extends BaseCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         /** @var Composer $composer */
-        $composer = $this->getComposer();
+        $composer = $this->requireComposer();
         /** @var string $vendorDir */
         $vendorDir = $composer->getConfig()->get('vendor-dir');
 
@@ -105,7 +105,7 @@ class ExtendedOutdatedCommand extends BaseCommand
 
         /** @var string $format */
         $format = $input->getOption('format');
-        if (!in_array($format, ['text', 'json'])) {
+        if (!in_array($format, ['text', 'json'], true)) {
             $io->writeError(sprintf('Unsupported format "%s". See help for supported formats.', $format));
             return 1;
         }
@@ -121,7 +121,7 @@ class ExtendedOutdatedCommand extends BaseCommand
 
         if ($input->getOption('locked')) {
             $locker = $composer->getLocker();
-            if (!$locker || !$locker->isLocked()) {
+            if (!$locker->isLocked()) {
                 throw new UnexpectedValueException('A valid composer.json and composer.lock files is required to run this command with --locked');
             }
             $lockedRepo = $locker->getLockedRepository(!$input->getOption('no-dev'));
@@ -301,7 +301,7 @@ class ExtendedOutdatedCommand extends BaseCommand
             }
 
             $table = new Table($output);
-            $table->setheaders(['Package', 'Actual version', 'Latest version', 'Notes']);
+            $table->setHeaders(['Package', 'Actual version', 'Latest version', 'Notes']);
 
             $i = 0;
             foreach ($outdatedPackages as $package) {
@@ -511,7 +511,7 @@ class ExtendedOutdatedCommand extends BaseCommand
 
         return str_replace(
             ['%baseUrl%', '%latestVersion%', '%changelogFile%'],
-            [$baseUrl, preg_replace('/^dev-/', '', $latestPackage->getPrettyVersion()), $changelog],
+            [$baseUrl, preg_replace('/^dev-/', '', $latestPackage->getPrettyVersion()) ?? $latestPackage->getPrettyVersion(), $changelog],
             $changelogPattern
         );
     }
@@ -540,9 +540,12 @@ class ExtendedOutdatedCommand extends BaseCommand
         return str_replace([':', 'git@', '.git', '///'], ['/', 'https://', '', '://'], $sourceUrl);
     }
 
-    private function getType(string $baseUrl): ?string
+    private function getType(string $baseUrl): string
     {
         $host = parse_url($baseUrl, PHP_URL_HOST);
-        return $this->hostToTypeMap[$host] ?? null;
+        if (!is_string($host)) {
+            return '';
+        }
+        return $this->hostToTypeMap[$host] ?? '';
     }
 }
